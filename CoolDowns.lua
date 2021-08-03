@@ -210,14 +210,17 @@ function AZP.CoolDowns:CheckNextPlayer(Index)
 end
 
 function AZP.CoolDowns.Events:GroupRosterUpdate()
-    PlayerCheckedSinceGRU = {}
-    for i = 1, 40 do
-        local curGUID = UnitGUID("raid" .. i)
-        if curGUID ~= nil then PlayerCheckedSinceGRU[i] = {GUID = curGUID, Checked = false} end
+    local ActiveCombat = UnitAffectingCombat("PLAYER")
+    if ActiveCombat == false then
+        PlayerCheckedSinceGRU = {}
+        for i = 1, 40 do
+            local curGUID = UnitGUID("raid" .. i)
+            if curGUID ~= nil then PlayerCheckedSinceGRU[i] = {GUID = curGUID, Checked = false} end
+        end
+        CoolDownBarFrame.CoolDowns = {}
+        CoolDownBarFrame.CoolDowns.Identifiers = {}
+        NotifyInspect("raid1")
     end
-    CoolDownBarFrame.CoolDowns = {}
-    CoolDownBarFrame.CoolDowns.Identifiers = {}
-    NotifyInspect("raid1")
 end
 
 function AZP.CoolDowns:GetClassAndSpec(curIndex)
