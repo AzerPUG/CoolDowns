@@ -250,7 +250,9 @@ end
 
 function AZP.CoolDowns.Events:InspectReady(curGUID)
     local curIndex = AZP.CoolDowns:GetIndexOfChecked(curGUID)
+    if curIndex == nil then return end -- For when reloading while inspect is pending.
     local class, spec = AZP.CoolDowns:GetClassAndSpec(curIndex)
+    if spec == nil then AZP.CoolDowns:CheckNextPlayer(curIndex) return end -- For when player is out of range.
     local list = AZP.CoolDowns.CDList
     local curClass = list[class]
     local curSpec = curClass.Specs[spec]
