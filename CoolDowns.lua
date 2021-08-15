@@ -1,14 +1,3 @@
--- ToDo before v1 on CurseForge:
--- Remove people no longer in raid or in different spec.
--- Frame able to move.
--- Frame able to hide.
--- Remember location and hidden states.
--- Add priests (somehow with speccs not being trackable).
--- Add monks.
--- frame size changes based on list size.
--- Add Header.
--- Make compatible with AzerPUG's Core.
-
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
@@ -19,6 +8,7 @@ if AZP.CoolDowns.Events == nil then AZP.CoolDowns.Events = {} end
 local CoolDownTicker = nil
 
 PlayerCheckedSinceGRU = {}
+local ContinueScanning = false
 
 local CoolDownBarFrame = nil
 local EventFrame, UpdateFrame = nil, nil
@@ -31,7 +21,7 @@ function AZP.CoolDowns:OnLoadSelf()
     EventFrame:SetScript("OnEvent", function(...) AZP.CoolDowns:OnEvent(...) end)
 
     CoolDownBarFrame = CreateFrame("FRAME", nil, UIParent, "BackDropTemplate")
-    CoolDownBarFrame:SetSize(200, 150)
+    CoolDownBarFrame:SetSize(225, 150)
     CoolDownBarFrame:SetPoint("CENTER", -700, -100)
     CoolDownBarFrame:EnableMouse(true)
     CoolDownBarFrame:SetMovable(true)
@@ -49,6 +39,12 @@ function AZP.CoolDowns:OnLoadSelf()
     CoolDownBarFrame.Header:SetSize(CoolDownBarFrame:GetWidth(), 25)
     CoolDownBarFrame.Header:SetPoint("TOP", 0, -5)
     CoolDownBarFrame.Header:SetText("|cFF00FFFFAzerPUG's CoolDowns|r")
+
+    CoolDownBarFrame.ReScan = CreateFrame("BUTTON", nil, CoolDownBarFrame, "UIPanelButtonTemplate")
+    CoolDownBarFrame.ReScan:SetSize(20, 20)
+    CoolDownBarFrame.ReScan:SetPoint("TOPRIGHT", -5, -5)
+    CoolDownBarFrame.ReScan:SetText("+")
+    CoolDownBarFrame.ReScan:SetScript("OnClick", function() AZP.CoolDowns.Events:GroupRosterUpdate() end)
 
     CoolDownBarFrame.CoolDowns = {}
     CoolDownBarFrame.CoolDowns.Identifiers = {}
@@ -210,6 +206,8 @@ function AZP.CoolDowns:CheckNextPlayer(Index)
 end
 
 function AZP.CoolDowns.Events:GroupRosterUpdate()
+    AZP.CoolDowns:ResetCoolDowns()
+    ContinueScanning = false
     local ActiveCombat = UnitAffectingCombat("PLAYER")
     if ActiveCombat == false then
         PlayerCheckedSinceGRU = {}
@@ -219,6 +217,7 @@ function AZP.CoolDowns.Events:GroupRosterUpdate()
         end
         CoolDownBarFrame.CoolDowns = {}
         CoolDownBarFrame.CoolDowns.Identifiers = {}
+        ContinueScanning = true
         NotifyInspect("raid1")
     end
 end
@@ -262,7 +261,9 @@ function AZP.CoolDowns.Events:InspectReady(curGUID)
             AZP.CoolDowns:AddCoolDownsToList(curSpecCDs[i], curGUID)
         end
     end
-    AZP.CoolDowns:CheckNextPlayer(curIndex)
+    if ContinueScanning == true then
+        AZP.CoolDowns:CheckNextPlayer(curIndex)
+    end
 end
 
 AZP.CoolDowns:OnLoadSelf()
