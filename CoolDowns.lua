@@ -8,7 +8,7 @@ if AZP.CoolDowns.Events == nil then AZP.CoolDowns.Events = {} end
 local CoolDownTicker = nil
 
 PlayerCheckedSinceGRU = {}
-local ContinueScanning = false
+local IsScanning, RestartScanning = false, false
 
 local CoolDownBarFrame = nil
 local EventFrame, UpdateFrame = nil, nil
@@ -207,7 +207,6 @@ end
 
 function AZP.CoolDowns.Events:GroupRosterUpdate()
     AZP.CoolDowns:ResetCoolDowns()
-    ContinueScanning = false
     local ActiveCombat = UnitAffectingCombat("PLAYER")
     if ActiveCombat == false then
         PlayerCheckedSinceGRU = {}
@@ -217,8 +216,14 @@ function AZP.CoolDowns.Events:GroupRosterUpdate()
         end
         CoolDownBarFrame.CoolDowns = {}
         CoolDownBarFrame.CoolDowns.Identifiers = {}
-        ContinueScanning = true
+        if IsScanning == true then
+            RestartScanning = true
+        else
+            IsScanning = true
+        end
         NotifyInspect("raid1")
+        end
+
     end
 end
 
@@ -249,7 +254,7 @@ end
 
 function AZP.CoolDowns.Events:InspectReady(curGUID)
     local curIndex = AZP.CoolDowns:GetIndexOfChecked(curGUID)
-    if curIndex == nil then return end -- For when reloading while inspect is pending.
+    if curIndex == nil then IsScanning = false return end -- For when reloading while inspect is pending.
     local class, spec = AZP.CoolDowns:GetClassAndSpec(curIndex)
     if spec == nil then AZP.CoolDowns:CheckNextPlayer(curIndex) return end -- For when player is out of range.
     local list = AZP.CoolDowns.CDList
@@ -261,8 +266,13 @@ function AZP.CoolDowns.Events:InspectReady(curGUID)
             AZP.CoolDowns:AddCoolDownsToList(curSpecCDs[i], curGUID)
         end
     end
-    if ContinueScanning == true then
-        AZP.CoolDowns:CheckNextPlayer(curIndex)
+    if IsScanning == true then
+        if RestartScanning == true then
+            NotifyInspect("raid1")
+            RestartScanning = false
+        else
+            AZP.CoolDowns:CheckNextPlayer(curIndex)
+        end
     end
 end
 
