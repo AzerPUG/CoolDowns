@@ -10,9 +10,12 @@ local CoolDownTicker = nil
 PlayerCheckedSinceGRU = {}
 local ContinueScanning = false
 
+local PlayerScanQueue = {}
+local PlayerScanticker = nil
 local CoolDownBarFrame = nil
 local EventFrame, UpdateFrame = nil, nil
-
+local FailOffset = 1
+local LastUnitScanned = nil
 function AZP.CoolDowns:OnLoadSelf()
     EventFrame = CreateFrame("FRAME", nil)
     EventFrame:RegisterEvent("GROUP_ROSTER_UPDATE")
@@ -198,32 +201,62 @@ function AZP.CoolDowns:GetIndexOfChecked(curGUID)
     end
 end
 
-function AZP.CoolDowns:CheckNextPlayer(Index)
-    if UnitGUID("raid" .. Index + 1) ~= nil then
-        ClearInspectPlayer()
-        NotifyInspect("raid" .. Index + 1)
-    end
-end
-
 function AZP.CoolDowns.Events:GroupRosterUpdate()
     AZP.CoolDowns:ResetCoolDowns()
-    ContinueScanning = false
     local ActiveCombat = UnitAffectingCombat("PLAYER")
     if ActiveCombat == false then
-        PlayerCheckedSinceGRU = {}
-        for i = 1, 40 do
-            local curGUID = UnitGUID("raid" .. i)
-            if curGUID ~= nil then PlayerCheckedSinceGRU[i] = {GUID = curGUID, Checked = false} end
-        end
-        CoolDownBarFrame.CoolDowns = {}
-        CoolDownBarFrame.CoolDowns.Identifiers = {}
-        ContinueScanning = true
-        NotifyInspect("raid1")
+        AZP.CoolDowns.QueueNewPlayers()
     end
 end
 
-function AZP.CoolDowns:GetClassAndSpec(curIndex)
-    local _, _, curClass = UnitClass("raid" .. curIndex)
+function AZP.CoolDowns.StartPlayerScanner()
+    if PlayerScanticker == nil then
+        PlayerScanticker = C_Timer.NewTicker(0.5, function() AZP.CoolDowns.ScanForPlayers() end)
+    end
+end
+
+function AZP.CoolDowns.ScanForPlayers()
+    if #PlayerScanQueue == 0 then
+        PlayerScanticker:Cancel()
+        PlayerScanticker = nil
+        return
+    end
+
+    if FailOffset > #PlayerScanQueue then
+        FailOffset = 1
+    end
+
+    local PlayerToScan = PlayerScanQueue[FailOffset]
+
+    if PlayerToScan.id == LastUnitScanned then
+        FailOffset = FailOffset + 1
+        PlayerToScan = PlayerScanQueue[FailOffset]
+        print("Failed to scan " .. PlayerToScan.id)
+    end
+
+    if PlayerToScan ~= nil then
+        print("Scanning " .. PlayerToScan.id)
+        if CanInspect(PlayerToScan.id, false) then
+            NotifyInspect(PlayerToScan.id)
+        end
+    end
+end
+
+function AZP.CoolDowns.QueueNewPlayers()
+    for i = 1, 40 do
+        local unitID = string.format("raid%d", i)
+        local curGUID = UnitGUID(unitID)
+        if curGUID ~= nil then
+            if ContainsIf(PlayerScanQueue, function(unit) return unit.id == unitID end) == false then
+                tinsert(PlayerScanQueue, {id=unitID, guid=curGUID})
+            end
+        end
+    end
+    AZP.CoolDowns.StartPlayerScanner()
+end
+
+function AZP.CoolDowns:GetClassAndSpec(unitID)
+    local _, _, curClass = UnitClass(unitID)
     local curSpec = nil
 
     local totSpecs = 0
@@ -234,7 +267,7 @@ function AZP.CoolDowns:GetClassAndSpec(curIndex)
     local curTalentList = AZP.CoolDowns.SpecIdentifiers[curClass]
 
     for columns = 1, 3 do
-        local talentID, _, _, selected = GetTalentInfo(1, columns, 1, true, "RAID" .. curIndex)
+        local talentID, _, _, selected = GetTalentInfo(1, columns, 1, true, unitID)
         if selected == true then
             for specNumber = 1, totSpecs do
                 for talentNumber = 1, 3 do
@@ -248,10 +281,10 @@ function AZP.CoolDowns:GetClassAndSpec(curIndex)
 end
 
 function AZP.CoolDowns.Events:InspectReady(curGUID)
-    local curIndex = AZP.CoolDowns:GetIndexOfChecked(curGUID)
-    if curIndex == nil then return end -- For when reloading while inspect is pending.
-    local class, spec = AZP.CoolDowns:GetClassAndSpec(curIndex)
-    if spec == nil then AZP.CoolDowns:CheckNextPlayer(curIndex) return end -- For when player is out of range.
+    local QueuePos, QueueItem = FindInTableIf(PlayerScanQueue, function (unit) DevTools_Dump(unit) return unit.guid == curGUID end)
+    if QueuePos == nil then return end
+    local class, spec = AZP.CoolDowns:GetClassAndSpec(QueueItem.id)
+    if spec == nil then return end -- For when player is out of range.
     local list = AZP.CoolDowns.CDList
     local curClass = list[class]
     local curSpec = curClass.Specs[spec]
@@ -261,9 +294,9 @@ function AZP.CoolDowns.Events:InspectReady(curGUID)
             AZP.CoolDowns:AddCoolDownsToList(curSpecCDs[i], curGUID)
         end
     end
-    if ContinueScanning == true then
-        AZP.CoolDowns:CheckNextPlayer(curIndex)
-    end
+
+    print("Inspected " .. QueueItem.id)
+    table.remove(PlayerScanQueue, QueuePos)
 end
 
 AZP.CoolDowns:OnLoadSelf()
