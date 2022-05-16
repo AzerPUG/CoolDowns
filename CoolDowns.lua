@@ -261,25 +261,7 @@ end
 
 function AZP.CoolDowns:GetClassAndSpec(unitID)
     local _, _, curClass = UnitClass(unitID)
-    local curSpec = nil
-
-    local totSpecs = 0
-    if curClass == 11 then totSpecs = 4
-    elseif curClass == 12 then totSpecs = 2
-    else totSpecs = 3 end
-
-    local curTalentList = AZP.CoolDowns.SpecIdentifiers[curClass]
-
-    for columns = 1, 3 do
-        local talentID, _, _, selected = GetTalentInfo(1, columns, 1, true, unitID)
-        if selected == true then
-            for specNumber = 1, totSpecs do
-                for talentNumber = 1, 3 do
-                    if curTalentList[specNumber][talentNumber] == talentID then curSpec = specNumber break end
-                end
-            end
-        end
-    end
+    local curSpec = GetInspectSpecialization(unitID)
 
     return curClass, curSpec
 end
@@ -291,9 +273,8 @@ function AZP.CoolDowns.Events:InspectReady(curGUID)
     if QueuePos == nil then print("Player not found for scanning: ", curGUID) ScanBusy = false return end
     local class, spec = AZP.CoolDowns:GetClassAndSpec(QueueItem.id)
     if spec ~= nil then
-        local list = AZP.CoolDowns.CDList
-        local curClass = list[class]
-        local curSpec = curClass.Specs[spec]
+        local curClass = AZP.CoolDowns.CDList[class]
+        local curSpec = curClass.Specs[AZP.CoolDowns.SpecIdentifiers[class][spec]]
         local curSpecCDs = curSpec.Spells
         if #curSpecCDs >= 0 then
             for i = 1, #curSpecCDs do
