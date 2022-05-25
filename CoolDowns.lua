@@ -230,13 +230,14 @@ function AZP.CoolDowns.ScanForPlayers()
     local PlayerToScan = PlayerScanQueue[FailOffset]
     
     if LastUnitScanned and PlayerToScan.id == LastUnitScanned.id then
-        print("Failed to scan " .. PlayerToScan.id)
+        --print("Failed to scan " .. PlayerToScan.id)
+        LastUnitScanned = nil
         FailOffset = FailOffset + 1
         return
     end
 
     if PlayerToScan ~= nil then
-        print("Scanning " .. PlayerToScan.id .. "-" .. PlayerToScan.guid, "-", FailOffset)
+        --print("Scanning " .. PlayerToScan.id .. "-" .. PlayerToScan.guid, "-", FailOffset)
         if CanInspect(PlayerToScan.id, false) and ScanBusy == false then
             NotifyInspect(PlayerToScan.id)
             LastUnitScanned = PlayerToScan
@@ -268,9 +269,9 @@ end
 
 function AZP.CoolDowns.Events:InspectReady(curGUID)
     ScanBusy = true
-    print( "length was: ", #PlayerScanQueue, " - ", curGUID)
+    --print( "length was: ", #PlayerScanQueue, " - ", curGUID)
     local QueuePos, QueueItem = FindInTableIf(PlayerScanQueue, function (unit) return unit.guid == curGUID end)
-    if QueuePos == nil then print("Player not found for scanning: ", curGUID) ScanBusy = false return end
+    if QueuePos == nil then  ScanBusy = false return end
     local class, spec = AZP.CoolDowns:GetClassAndSpec(QueueItem.id)
     if spec ~= nil then
         local curClass = AZP.CoolDowns.CDList[class]
@@ -282,9 +283,9 @@ function AZP.CoolDowns.Events:InspectReady(curGUID)
             end
         end
 
-        print("Inspected " .. QueueItem.id, "with GUID", curGUID, "removing from queue", QueuePos)
+        --print("Inspected " .. QueueItem.id, "with GUID", curGUID, "removing from queue", QueuePos)
         table.remove(PlayerScanQueue, QueuePos)
-        print("afterwards length was: ", #PlayerScanQueue)
+        --print("afterwards length was: ", #PlayerScanQueue)
         
         if LastUnitScanned and LastUnitScanned.guid == curGUID then
             ClearInspectPlayer()

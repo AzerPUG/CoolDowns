@@ -109,7 +109,7 @@ AZP.CoolDowns.CDList =
             [2] =
             {
                 Name = "Holy",
-                Spells = {},
+                Spells = {64843, 265202},
             },
             [3] =
             {
@@ -309,6 +309,7 @@ AZP.CoolDowns.SpellList =
     [31821] =  {Name = "Aura Mastery",       NameShort = "AMaster", CoolDown = 180, Duration =  8, CDAdjust = nil, CDAdjustDescr =      nil},
     [98008] =  {Name = "Spirit Link Totem",  NameShort =   "SLink", CoolDown = 180, Duration =  6, CDAdjust = nil, CDAdjustDescr =      nil},
     [108280] = {Name = "Healing Tide Totem", NameShort =   "HTide", CoolDown = 180, Duration = 10, CDAdjust = nil, CDAdjustDescr =      nil},
-
-    [48438] = {Name = "Wild Growth", NameShort =   "WG", CoolDown = 10, Duration = 7, CDAdjust = nil, CDAdjustDescr =      nil},
+    [64843] =  {Name = "Divine Hymn",        NameShort =   "DHymn", CoolDown = 180, Duration = 10, CDAdjust = nil, CDAdjustDescr =      nil},
+    [265202] = {Name = "Salvation",          NameShort =   "Salvation", CoolDown = 300, Duration = 10, CDAdjust = nil, CDAdjustDescr =      nil},
+    [48438] =  {Name = "Wild Growth",        NameShort =   "WG", CoolDown = 10, Duration = 7, CDAdjust = nil, CDAdjustDescr =      nil},
 }
