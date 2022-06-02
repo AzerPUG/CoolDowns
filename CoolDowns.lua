@@ -1,7 +1,7 @@
 if AZP == nil then AZP = {} end
 if AZP.VersionControl == nil then AZP.VersionControl = {} end
 
-AZP.VersionControl["CoolDowns"] = 1
+AZP.VersionControl["CoolDowns"] = 4
 if AZP.CoolDowns == nil then AZP.CoolDowns = {} end
 if AZP.CoolDowns.Events == nil then AZP.CoolDowns.Events = {} end
 
